@@ -21,6 +21,7 @@ const unsigned int N = 26;
 // Hash table
 node *table[N];
 
+
 // Returns true if word is in dictionary, else false
 bool check(const char *word)
 {
@@ -46,33 +47,11 @@ bool load(const char *dictionary)
     }
 
     //Initialize the buffer
-
-    char *buffer = malloc(sizeof(char)*(LENGTH + 1));
+    char *buffer = malloc(sizeof(char));
     if (buffer == NULL)
     {
         return 0;
     }
-
-    //Read dictionary into an array of word length
-
-    while (fread(buffer, sizeof(char), 1, input))
-    {
-        printf("%s ", buffer);
-    }
-
-
-    //Could do as an array of LENGTH
-
-    //Could reallocate memory as it goes
-    //Could do a list
-
-
-
-    //Write buffer to memory array
-
-    //Close file
-
-    //Free buffer
 
 
     return false;
