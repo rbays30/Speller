@@ -22,6 +22,7 @@ const unsigned int N = 26;
 double size_lib = 0;
 double free_count = 0;
 
+
 // Hash table
 node *table[N];
 
@@ -38,12 +39,17 @@ bool check(const char *word)
     int sort_num_text = hash(word);
 
     //Initialize pointers to search through tables
-    node * table_ptr = table[sort_num_text];
-
-    while(true)
-
+    node * table_ptr = NULL;
+    if (table[sort_num_text] == NULL)
     {
-        if (strcasecmp(table_ptr->word, word) == 0)
+        return false;
+    }
+
+    table_ptr = table[sort_num_text];
+    while(true)
+    {
+        bool match = strcasecmp(table_ptr->word, word);
+        if (match == 0)
         {
             return true;
         }
@@ -73,7 +79,7 @@ unsigned int hash(const char *word)
 bool load(const char *dictionary)
 {
     // TODO
-
+    int sort_num = 0;
     FILE *input = fopen(dictionary,"r");
     if (input == NULL)
     {
@@ -96,7 +102,6 @@ bool load(const char *dictionary)
     char current_word[LENGTH + 1];
     char last_char = '\n';
 
-    int sort_num = atoi(buffer);
     node * ptr = NULL;
     node * temp_node = NULL;
 
@@ -132,18 +137,8 @@ bool load(const char *dictionary)
         last_char = *buffer;
         count += 1;
     }
-
-    //TEST PRINT
-
-    // char * test_ptr = &table[10]->word[0];
-    // printf("%s",test_ptr);
-    // ptr = table[10]->next;
-    // while(ptr != NULL)
-
-    //     ptr = table[10]->next;
-    //     test_ptr = &ptr->word[0];
-    //     printf("%s",test_ptr);
-    printf("Library Size: %f \n",size_lib);
+    fclose(input);
+    free(buffer);
 
 
     return true;
@@ -160,7 +155,10 @@ bool create_node(int value)
     }
 
     //Ensure clean NODE
-    //memset(new_node->word,NUL,[LENGTH + 1]);
+    for (int i = 0; i < LENGTH + 1; i++)
+    {
+        new_node->word[i] = '\0';
+    }
     new_node->next = NULL;
 
     //Set next to current node in case of collisions, otherwise will be set to NULL
@@ -186,8 +184,11 @@ bool unload(void)
     node * ptr = NULL;
     for (int i = 0; i < N; i++)
     {
-        ptr = table[i];
-        free_node(ptr);
+        if (table[i] != NULL)
+        {
+            ptr = table[i];
+            free_node(ptr);
+        }
     }
 
     if(free_count == size_lib)
