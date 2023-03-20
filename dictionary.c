@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 
 #include "dictionary.h"
 
@@ -18,6 +19,8 @@ node;
 
 // TODO: Choose number of buckets in hash table
 const unsigned int N = 26;
+double size_lib = 0;
+double free_count = 0;
 
 // Hash table
 node *table[N];
@@ -25,11 +28,36 @@ node *table[N];
 //Prototypes
 
 bool create_node(int value);
+void free_node(node * ptr);
+
 
 // Returns true if word is in dictionary, else false
 bool check(const char *word)
 {
-    // TODO
+    //Grab the hash value of the word to be checked
+    int sort_num_text = hash(word);
+
+    //Initialize pointers to search through tables
+    node * table_ptr = table[sort_num_text];
+
+    while(true)
+
+    {
+        if (strcasecmp(table_ptr->word, word) == 0)
+        {
+            return true;
+        }
+
+        if(table_ptr->next == NULL)
+        {
+            return false;
+        }
+
+        table_ptr = table_ptr->next;
+    }
+
+    //If the word is not found
+
     return false;
 }
 
@@ -81,7 +109,8 @@ bool load(const char *dictionary)
         //if the last character is a first letter
         if (last_char == '\n')
         {
-            sort_num = (int)*buffer - 97;
+            sort_num = hash(buffer);
+            size_lib += 1;
 
             //Creates a new node
             bool success = create_node(sort_num);
@@ -94,12 +123,28 @@ bool load(const char *dictionary)
             count = 0;
         }
 
-        table[sort_num]->word[count] = *buffer;
+        if(*buffer != '\n')
+        {
+            table[sort_num]->word[count] = *buffer;
+        }
 
         //Prepare for next loop
         last_char = *buffer;
         count += 1;
     }
+
+    //TEST PRINT
+
+    // char * test_ptr = &table[10]->word[0];
+    // printf("%s",test_ptr);
+    // ptr = table[10]->next;
+    // while(ptr != NULL)
+
+    //     ptr = table[10]->next;
+    //     test_ptr = &ptr->word[0];
+    //     printf("%s",test_ptr);
+    printf("Library Size: %f \n",size_lib);
+
 
     return true;
 }
@@ -132,12 +177,35 @@ bool create_node(int value)
 unsigned int size(void)
 {
     // TODO
-    return 0;
+    return size_lib;
 }
 
 // Unloads dictionary from memory, returning true if successful, else false
 bool unload(void)
 {
-    // TODO
+    node * ptr = NULL;
+    for (int i = 0; i < N; i++)
+    {
+        ptr = table[i];
+        free_node(ptr);
+    }
+
+    if(free_count == size_lib)
+    {
+        return true;
+    }
+
     return false;
+}
+
+void free_node(node * ptr)
+{
+    if (ptr->next != NULL)
+    {
+        free_node(ptr->next);
+    }
+
+    free(ptr);
+    free_count += 1;
+
 }
