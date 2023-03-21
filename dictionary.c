@@ -19,10 +19,11 @@ typedef struct node
 node;
 
 // TODO: Choose number of buckets in hash table
-const unsigned int N = 26;
+const unsigned long int N = 26 * LENGTH * 26;
 double size_lib = 0;
 double free_count = 0;
 int match = 0;
+int collision = 0;
 
 
 // Hash table
@@ -60,6 +61,7 @@ bool check(const char *word)
 
         if(table_ptr->next == NULL)
         {
+            collision += 1;
             return false;
 
         }
@@ -83,14 +85,19 @@ unsigned int hash(const char *word)
     int length = strlen(word);
     unsigned int hash_value = 0;
 
-    // for (int i = 0; i < length; i++)
-    // {
-    //     sum += (int)(toupper(word[i]) - 'A');
-    // }
+    int value = 0;
 
-    hash_value = (length);
-    // printf("Value:%u \n", hash_value);
+    for (int i = 0; i < length; i++)
+    {
+        value = (int)(toupper(word[i]) - 'A');
 
+        if (value > 0)
+        {
+            sum += value;
+        }
+    }
+
+    hash_value = sum * length;
 
     return hash_value;
 }
@@ -120,6 +127,7 @@ bool load(const char *dictionary)
         table[i] = NULL;
     }
 
+
     char current_word[LENGTH + 1];
     char * ptr_current = NULL;
     ptr_current = &current_word[0];
@@ -132,7 +140,9 @@ bool load(const char *dictionary)
     //Obtain a character
     do
     {
+
         read_value = fread(buffer, sizeof(char), 1, input);
+
         //if the last character is a first letter
         if (last_char == '\n')
         {
@@ -166,8 +176,9 @@ bool load(const char *dictionary)
         //Prepare for next loop
         last_char = *buffer;
         count += 1;
-    }
-    while(read_value);
+
+    } while(read_value);
+
 
 
 
@@ -226,6 +237,8 @@ bool unload(void)
 
     if(free_count == size_lib)
     {
+        // printf("Collisions: %i\n", collision);
+
         return true;
     }
 
