@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+#include <math.h>
 
 #include "dictionary.h"
 
@@ -21,6 +22,7 @@ node;
 const unsigned int N = 26;
 double size_lib = 0;
 double free_count = 0;
+int match = 0;
 
 
 // Hash table
@@ -30,6 +32,8 @@ node *table[N];
 
 bool create_node(int value);
 void free_node(node * ptr);
+void clear_array(char * word_array);
+void copy_word(char * recorded_word, node * table);
 
 
 // Returns true if word is in dictionary, else false
@@ -48,7 +52,7 @@ bool check(const char *word)
     table_ptr = table[sort_num_text];
     while(true)
     {
-        bool match = strcasecmp(table_ptr->word, word);
+        match = strcasecmp(table_ptr->word, word);
         if (match == 0)
         {
             return true;
@@ -57,6 +61,7 @@ bool check(const char *word)
         if(table_ptr->next == NULL)
         {
             return false;
+
         }
 
         table_ptr = table_ptr->next;
@@ -71,7 +76,23 @@ bool check(const char *word)
 unsigned int hash(const char *word)
 {
     // TODO: Improve this hash function
-    return toupper(word[0]) - 'A';
+
+    //Sum ASCII values of string
+
+    long int sum = 0;
+    int length = strlen(word);
+    unsigned int hash_value = 0;
+
+    // for (int i = 0; i < length; i++)
+    // {
+    //     sum += (int)(toupper(word[i]) - 'A');
+    // }
+
+    hash_value = (length);
+    // printf("Value:%u \n", hash_value);
+
+
+    return hash_value;
 }
 
 
@@ -100,24 +121,25 @@ bool load(const char *dictionary)
     }
 
     char current_word[LENGTH + 1];
-    char last_char = '\n';
+    char * ptr_current = NULL;
+    ptr_current = &current_word[0];
 
-    node * ptr = NULL;
-    node * temp_node = NULL;
-
+    clear_array(ptr_current);
+    char last_char = '\0';
+    int count = 0;
+    size_t read_value = 1;
 
     //Obtain a character
-
-    int count = 0;
-    while (fread(buffer, sizeof(char), 1, input))
+    do
     {
+        read_value = fread(buffer, sizeof(char), 1, input);
         //if the last character is a first letter
         if (last_char == '\n')
         {
-            sort_num = hash(buffer);
-            size_lib += 1;
+            //Load the current word into the hash function
+            sort_num = hash(current_word);
 
-            //Creates a new node
+            //Creates a new node to place the word
             bool success = create_node(sort_num);
             if(!success)
             {
@@ -125,21 +147,32 @@ bool load(const char *dictionary)
                 return false;
             }
 
+            //Load the current word into a node
+            copy_word(ptr_current,table[sort_num]);
+            size_lib += 1;
+
+
+            //Prepare for new word
+            clear_array(ptr_current);
             count = 0;
         }
 
         if(*buffer != '\n')
         {
-            table[sort_num]->word[count] = *buffer;
+            // printf("Buffer: %c\n", *buffer);
+            current_word[count] = *buffer;
         }
 
         //Prepare for next loop
         last_char = *buffer;
         count += 1;
     }
+    while(read_value);
+
+
+
     fclose(input);
     free(buffer);
-
 
     return true;
 }
@@ -208,5 +241,29 @@ void free_node(node * ptr)
 
     free(ptr);
     free_count += 1;
+
+}
+
+void clear_array(char * word_array)
+{
+    for (int i = 0; i < LENGTH; i++)
+    {
+        word_array[i] = '\0';
+    }
+}
+
+void copy_word(char * recorded_word, node * table_value)
+{
+    for (int i = 0; i < LENGTH; i++)
+    {
+        if (recorded_word[i] == '\0')
+        {
+            table_value->word[i] = '\0';
+            // printf("Word recorded as: %s \n", table_value->word);
+            return;
+        }
+
+        table_value->word[i] = recorded_word[i];
+    }
 
 }
