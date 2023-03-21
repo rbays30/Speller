@@ -18,13 +18,13 @@ typedef struct node
 }
 node;
 
-// TODO: Choose number of buckets in hash table
+//Bucket length is the max value of a letter * the max length of the array * length per hash funciton
 const unsigned long int N = 26 * LENGTH * 26;
-double size_lib = 0;
-double free_count = 0;
-int match = 0;
-int collision = 0;
 
+//Initialize other utility values
+long int size_lib = 0;
+long int free_count = 0;
+int match = 0;
 
 // Hash table
 node *table[N];
@@ -32,10 +32,9 @@ node *table[N];
 //Prototypes
 
 bool create_node(int value);
-void free_node(node * ptr);
-void clear_array(char * word_array);
-void copy_word(char * recorded_word, node * table);
-
+void free_node(node *ptr);
+void clear_array(char *word_array);
+void copy_word(char *recorded_word, node *table);
 
 // Returns true if word is in dictionary, else false
 bool check(const char *word)
@@ -43,62 +42,71 @@ bool check(const char *word)
     //Grab the hash value of the word to be checked
     int sort_num_text = hash(word);
 
-    //Initialize pointers to search through tables
-    node * table_ptr = NULL;
+    //Initialize pointer to search through table
+    node *table_ptr = NULL;
+
+    //If the bucket hasn't been initialized, return false
     if (table[sort_num_text] == NULL)
     {
         return false;
     }
 
+    //Set the pointer to the bucket hashed from the word
     table_ptr = table[sort_num_text];
-    while(true)
+
+    //Infinite loop that stops when the next pointer is null or the word matches
+    while (true)
     {
+        //Variable to determine match
         match = strcasecmp(table_ptr->word, word);
+
+        //Matching word
         if (match == 0)
         {
             return true;
         }
 
-        if(table_ptr->next == NULL)
+        //Non matching word
+        if (table_ptr->next == NULL)
         {
-            collision += 1;
             return false;
-
         }
 
+        //If neither of these scenarios happened, check the next value
         table_ptr = table_ptr->next;
     }
 
     //If the word is not found
-
     return false;
 }
 
 // Hashes word to a number
 unsigned int hash(const char *word)
 {
-    // TODO: Improve this hash function
 
-    //Sum ASCII values of string
 
+    //Initialize variables
     long int sum = 0;
     int length = strlen(word);
     unsigned int hash_value = 0;
-
     int value = 0;
 
+    //Loop through the word, summing ASCII values of word as long as there is no apostrophes
     for (int i = 0; i < length; i++)
     {
         value = (int)(toupper(word[i]) - 'A');
 
+        //Make sure no apostrophes are included
         if (value > 0)
         {
             sum += value;
         }
     }
 
+    //Hash value is the sum of ASCII values times the length of the word
     hash_value = sum * length;
 
+    //Return value
     return hash_value;
 }
 
@@ -106,9 +114,11 @@ unsigned int hash(const char *word)
 // Loads dictionary into memory, returning true if successful, else false
 bool load(const char *dictionary)
 {
-    // TODO
-    int sort_num = 0;
-    FILE *input = fopen(dictionary,"r");
+
+    //Open File
+    FILE *input = fopen(dictionary, "r");
+
+    //If file open fails, exit and return false
     if (input == NULL)
     {
         return 0;
@@ -127,23 +137,28 @@ bool load(const char *dictionary)
         table[i] = NULL;
     }
 
-
+    //Initialize Variables
+    int sort_num = 0;
     char current_word[LENGTH + 1];
-    char * ptr_current = NULL;
-    ptr_current = &current_word[0];
-
-    clear_array(ptr_current);
     char last_char = '\0';
     int count = 0;
     size_t read_value = 1;
 
+
+    //Initialize pointer to control stack
+    char *ptr_current = NULL;
+    ptr_current = &current_word[0];
+
+    //Function to change array to all '\0'
+    clear_array(ptr_current);
+
     //Obtain a character
     do
     {
-
+        //Read the next character
         read_value = fread(buffer, sizeof(char), 1, input);
 
-        //if the last character is a first letter
+        //if the last recorded character is a new line, must be a new word that needs a new node
         if (last_char == '\n')
         {
             //Load the current word into the hash function
@@ -151,25 +166,28 @@ bool load(const char *dictionary)
 
             //Creates a new node to place the word
             bool success = create_node(sort_num);
-            if(!success)
+
+            //If node creation failed, return false to show error
+            if (!success)
             {
                 printf("Out of Memory for new pointer.\n");
                 return false;
             }
 
             //Load the current word into a node
-            copy_word(ptr_current,table[sort_num]);
-            size_lib += 1;
+            copy_word(ptr_current, table[sort_num]);
 
+            //Variable to track size of library
+            size_lib += 1;
 
             //Prepare for new word
             clear_array(ptr_current);
             count = 0;
         }
 
-        if(*buffer != '\n')
+        //If buffer is not a new line, print the value to the array
+        if (*buffer != '\n')
         {
-            // printf("Buffer: %c\n", *buffer);
             current_word[count] = *buffer;
         }
 
@@ -177,28 +195,31 @@ bool load(const char *dictionary)
         last_char = *buffer;
         count += 1;
 
-    } while(read_value);
+    }
+    while (read_value);
 
-
-
-
+    //Close file
     fclose(input);
+
+    //Free buffer
     free(buffer);
 
     return true;
 }
 
-//Creates a node
-
+//Creates a node based on the given value/bucket
 bool create_node(int value)
 {
-    node * new_node = malloc(sizeof(node));
-    if(new_node == NULL)
+    //Allocate memory for a new node
+    node *new_node = malloc(sizeof(node));
+
+    //Check to make sure node creation was successful, otherwise return false
+    if (new_node == NULL)
     {
-         return 0;
+        return 0;
     }
 
-    //Ensure clean NODE
+    //Ensure clean NODE with starting values of null for next and all '\0' for word
     for (int i = 0; i < LENGTH + 1; i++)
     {
         new_node->word[i] = '\0';
@@ -218,14 +239,16 @@ bool create_node(int value)
 // Returns number of words in dictionary if loaded, else 0 if not yet loaded
 unsigned int size(void)
 {
-    // TODO
     return size_lib;
 }
 
 // Unloads dictionary from memory, returning true if successful, else false
 bool unload(void)
 {
-    node * ptr = NULL;
+    //Initialize a pointer to point at different nodes to free them
+    node *ptr = NULL;
+
+    //For each bucket, recursively free the parent, and then free the child
     for (int i = 0; i < N; i++)
     {
         if (table[i] != NULL)
@@ -235,17 +258,19 @@ bool unload(void)
         }
     }
 
-    if(free_count == size_lib)
+    //Check to make sure every node was freed
+    if (free_count == size_lib)
     {
-        // printf("Collisions: %i\n", collision);
-
         return true;
     }
 
+    //If not all nodes were freed, return false
     return false;
 }
 
-void free_node(node * ptr)
+
+//Function to free the given pointer
+void free_node(node *ptr)
 {
     if (ptr->next != NULL)
     {
@@ -253,11 +278,14 @@ void free_node(node * ptr)
     }
 
     free(ptr);
+
+    //Track how many nodes were freed
     free_count += 1;
 
 }
 
-void clear_array(char * word_array)
+//Function to fill an array with '\0'
+void clear_array(char *word_array)
 {
     for (int i = 0; i < LENGTH; i++)
     {
@@ -265,14 +293,14 @@ void clear_array(char * word_array)
     }
 }
 
-void copy_word(char * recorded_word, node * table_value)
+//Function to copy the word stored in memory to a node
+void copy_word(char *recorded_word, node *table_value)
 {
     for (int i = 0; i < LENGTH; i++)
     {
         if (recorded_word[i] == '\0')
         {
             table_value->word[i] = '\0';
-            // printf("Word recorded as: %s \n", table_value->word);
             return;
         }
 
